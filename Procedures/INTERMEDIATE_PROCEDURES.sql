@@ -1,0 +1,164 @@
+-- INTERMEDIATE PROCEDURES
+
+--Calculate annual salary :   Compute and return the annual salary of an employee using their monthly salary.
+-- List employees in a department  : Fetch all employees working in a specific department.
+-- Promote an employee : Update the job title and salary of an employee based on their performance.
+-- Get employee count by department : Return the number of employees in each department.
+-- Transfer an employee to another department  := Change the department_id for a specific employee.
+
+DESC EMPLOYEES;
+SELECT * FROM EMPLOYEES;
+
+-- 1) Calculate annual salary :   Compute and return the annual salary of an employee using their monthly salary.
+SET SERVEROUTPUT ON;
+CREATE OR REPLACE PROCEDURE XX_GET_ANNUAL_SALARY (
+P_EMPID IN NUMBER,
+P_EMP_NAME OUT VARCHAR2,
+P_ANNUAL_SALARY OUT NUMBER
+) IS 
+V_MONTHLY_SALARY NUMBER;
+BEGIN
+--    UPDATE EMPLOYEES SET SALARY = SALARY*12 WHERE EMPID =P_EMPID;
+    SELECT EMP_NAME,SALARY INTO P_EMP_name,V_MONTHLY_SALARY FROM EMPLOYEES WHERE EMPID=P_EMPID;
+    P_ANNUAL_SALARY := V_MONTHLY_SALARY*12;
+END;
+/
+
+
+DECLARE
+V_EMPID                 NUMBER := 101;
+V_EMP_NAME              EMPLOYEES.EMP_NAME%TYPE;
+V_ANNUAL_SALARY         NUMBER;
+BEGIN
+    XX_GET_ANNUAL_SALARY(V_EMPID,V_EMP_NAME,V_ANNUAL_SALARY);
+    DBMS_OUTPUT.PUT_LINE('TOTAL ANNUAL SALARY FOR EMP ID : ' || V_EMPID || ' IS ' || V_ANNUAL_SALARY || ' WHOSe NAME IS : ' || V_EMP_NAME);
+END;
+/
+
+
+
+-- List employees in a department  : Fetch all employees working in a specific department.
+CREATE OR REPLACE PROCEDURE GET_DEPT_EMP_DETAILS(
+P_DEPT_NO_1     IN      NUMBER
+) IS
+CURSOR EMP_CURSOR IS SELECT EMPID,EMP_NAME,DEPTNO FROM EMPLOYEES WHERE DEPTNO = P_DEPT_NO_1;
+V_EMP_ID         EMPLOYEES.EMPID%TYPE;
+V_EMP_NAME       EMPLOYEES.EMP_NAME%TYPE;
+V_DEPTNO         EMPLOYEES.DEPTNO%TYPE;
+V_TOTAL_ROWS     NUMBER :=0;
+V_DATA_FOUND     BOOLEAN   := FALSE;  -- To check whether the data is there or not in this dept
+BEGIN
+    OPEN EMP_CURSOR;
+    LOOP
+        FETCH EMP_CURSOR INTO V_EMP_ID,V_EMP_NAME,V_DEPTNO ;
+        EXIT WHEN EMP_CURSOR%NOTFOUND;
+        V_DATA_FOUND := TRUE;
+        V_TOTAL_ROWS :=  V_TOTAL_ROWS + 1;
+        DBMS_OUTPUT.PUT_LINE('EMP ID IS : ' || V_EMP_ID 
+        || ' EMP NAME IS : ' || V_EMP_NAME 
+        || ' . DEPTNO IS : ' || V_DEPTNO);
+    END LOOP;
+    CLOSE EMP_CURSOR;
+    
+    IF V_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('TOTAL EMPLOYEES IN THIS DEPARTMENT : ' ||  P_DEPT_NO_1 || ' IS ' || V_TOTAL_ROWS);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('NO EMPLOYEES FOUND FOR THIS DEPARTMENT : ' ||  P_DEPT_NO_1);
+    END IF;
+    
+    EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('AN ERROR OCCURED !' || SQLERRM);
+END;
+/
+
+DECLARE
+V_DEPT_NO_1 NUMBER := 50;
+BEGIN
+    GET_DEPT_EMP_DETAILS(V_DEPT_NO_1);
+END;
+/
+
+
+
+-- 3. Promote an employee : Update the ADDRESS and salary of an employee based on their performance.
+CREATE OR REPLACE PROCEDURE UPDATE_EMP_DETAILS(
+P_EMPID_4  IN NUMBER,
+P_EMP_NAME_4  OUT  VARCHAR2,
+P_ADDRESS_4  IN  VARCHAR2,
+P_SALARY_4  IN NUMBER
+) IS
+
+BEGIN
+        UPDATE EMPLOYEES SET ADDRESS=P_ADDRESS_4,SALARY=P_SALARY_4 WHERE EMPID=P_EMPID_4;
+        SELECT EMP_NAME INTO P_EMP_NAME_4 FROM EMPLOYEES WHERE EMPID=P_EMPID_4;
+END;
+/
+
+DECLARE
+V_EMPID_4    NUMBER := 109;
+V_EMPNAME_4  EMPLOYEES.EMP_NAME%TYPE;
+V_ADDRESS_4  VARCHAR2(255) := 'UP';
+V_SALARY_4   NUMBER := 950000;
+BEGIN
+    UPDATE_EMP_DETAILS(V_EMPID_4,V_EMPNAME_4,V_ADDRESS_4,V_SALARY_4);
+    DBMS_OUTPUT.PUT_LINE('Updated Address and Salary for EMPID '  || V_EMPID_4);
+    DBMS_OUTPUT.PUT_LINE('EMP NAME IS : ' ||V_EMPNAME_4  || '  ADDRESS IS : ' || V_ADDRESS_4 || 
+    ' UPDATED SALARY IS : ' || V_SALARY_4    );
+END;
+/
+
+
+
+-- Get employee count by department : Return the number of employees in each department.
+CREATE OR REPLACE PROCEDURE COUNT_DEPT_EMPLOYEES(
+P_DEPTNO_5 IN NUMBER,
+TOTAL_DEPT_EMPLOYEES OUT NUMBER 
+) IS
+BEGIN
+    SELECT COUNT(*) INTO TOTAL_DEPT_EMPLOYEES FROM EMPLOYEES WHERE DEPTNO=P_DEPTNO_5;
+END;
+/
+
+DECLARE
+V_DEPTNO_5 NUMBER := 250;
+V_TOTAL_EMPLOYEES_5     NUMBER;
+BEGIN
+    COUNT_DEPT_EMPLOYEES(V_DEPTNO_5,V_TOTAL_EMPLOYEES_5);
+    DBMS_OUTPUT.PUT_LINE('Total Employees in DEPT : ' || V_DEPTNO_5 || ' IS :' || V_TOTAL_EMPLOYEES_5);
+
+IF V_TOTAL_EMPLOYEES_5=0 THEN
+    DBMS_OUTPUT.PUT_LINE('No employees in this DEPT :  ' || V_DEPTNO_5);
+END IF;
+
+EXCEPTION
+WHEN OTHERS THEN 
+    DBMS_OUTPUT.PUT_LINE('AN UNEXPECTED ERROR OCCURED ! ' || SQLERRM);
+END;
+/
+
+
+
+
+-- Transfer an employee to another department  := Change the department_id for a specific employee.
+CREATE OR REPLACE PROCEDURE XX_EMP_DEPARTMENT_CHANGE(
+P_EMPID_6 IN NUMBER,
+P_DEPTNO_6  IN  NUMBER,
+P_EMPNAME_6 OUT VARCHAR2
+) IS
+BEGIN
+UPDATE EMPLOYEES SET DEPTNO=P_DEPTNO_6 WHERE EMPID=P_EMPID_6;
+SELECT EMP_NAME INTO P_EMPNAME_6 FROM EMPLOYEES WHERE EMPID=P_EMPID_6;
+END;
+/
+
+DECLARE
+V_EMPID_6       NUMBER:= 106;
+V_DEPTNO_6      NUMBER:= 100;
+V_EMP_NAME_6    EMPLOYEES.EMP_NAME%TYPE;
+BEGIN
+    XX_EMP_DEPARTMENT_CHANGE(V_EMPID_6,V_DEPTNO_6,V_EMP_NAME_6);
+    DBMS_OUTPUT.PUT_LINE('DEPT NUMBER CHANGED FOR EMP ID : ' || V_EMPID_6 || 
+    ' WHOSE NAME IS : ' || V_EMP_NAME_6 || ' UPDATED DEPTNO IS : ' || V_DEPTNO_6);
+END;
+/
